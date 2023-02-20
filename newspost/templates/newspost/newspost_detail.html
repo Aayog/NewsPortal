@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}{% endblock %} - My News Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="{% url 'home' %}">Home</a></li>
+      <li><a href="{% url 'news:news_list' %}">News</a></li>
+      <li><a href="{% url 'about' %}">About</a></li>
+    </ul>
+  </nav>
+  <main>
+    
+  <h1>{{ news.title }}</h1>
+  <p>By {{ news.reporter }} on {{ news.date }}</p>
+  <p>{{ news.content }}</p>
+  </main>
+  <footer>
+    <p>&copy; My News Portal 2023</p>
+  </footer>
+</body>
+</html>
+
+
+{% comment %} {% block content %}
+  <h1>{{ news.title }}</h1>
+  <p>By {{ news.reporter }} on {{ news.date }}</p>
+  <p>{{ news.content }}</p>
+{% endblock content %} {% endcomment %}
