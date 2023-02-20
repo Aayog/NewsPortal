@@ -14,7 +14,7 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from ..newspost.forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm
 from .models import CustomUser, NewsPost, Reporter
 
 # View to display a list of all news posts

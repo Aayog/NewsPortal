@@ -1,6 +1,6 @@
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from users.views import register_view, activate_account
+from newspost.views import register_view, activate_account
 
 urlpatterns = [
     # other URL patterns here
