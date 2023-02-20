@@ -1,6 +1,6 @@
 from django.db import models
 from autoslug import AutoSlugField
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 
 # Create your models here.
@@ -21,7 +21,7 @@ class NewsPost(models.Model):
     news_text = models.CharField(max_length=10000)
     
 
-class CustomUser(AbstractUser):
+class CustomUser(AbstractBaseUser):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     bio = models.TextField(max_length=255)
