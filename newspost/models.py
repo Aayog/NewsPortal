@@ -13,7 +13,10 @@ class Category(models.Model):
 
     def __str__(self) -> str:
         return self.name
-    
+
+    class Meta:
+        verbose_name_plural ="Categories"
+
 class NewsPost(models.Model):
     headline = models.CharField(max_length=150)
     date_added = models.DateTimeField(auto_now=True)
@@ -25,7 +28,7 @@ class CustomUser(AbstractBaseUser):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     bio = models.TextField(max_length=255)
-    profile_pic = models.ImageField(upload_to='/profile_pictures', blank=True)
+    profile_pic = models.ImageField(upload_to='profile_pictures', blank=True)
 
     
 class Reporter(models.Model):
@@ -46,7 +49,7 @@ class FavoriteReporter(models.Model):
         unique_together = ('user', 'reporter')
 
 class FavoriteCategory(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='favorite_reporters')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='favorite_categories')
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     class Meta:
