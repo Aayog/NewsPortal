@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>{{ news.title }}</h1>
+  <p>By {{ news.reporter }} on {{ news.date }}</p>
+  <p>{{ news.content }}</p>
+{% endblock content %}
