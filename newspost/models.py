@@ -2,6 +2,13 @@ from django.db import models
 from autoslug import AutoSlugField
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.contrib.auth.tokens import default_token_generator
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage
+from django.urls import reverse
+from .tokens import account_activation_token
 
 class Category(models.Model):
     name = models.CharField(max_length=255)  
@@ -30,6 +37,21 @@ class UserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
+        # mail_subject = 'Activate your News Portal account.'
+        # token = account_activation_token.make_token(user)
+        # uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        # message = render_to_string('registration/account_activation_email.html', {
+        #     'user': user,
+        #     'domain': '127.0.0.1', #current_site.domain,
+        #     'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        #     'activation_link': f'http://127.0.0.1:9000/activate/{uidb64}/{token}'
+        # })
+        # to_email = user.get('email')
+        # email = EmailMessage(
+        #     mail_subject, message, to=[to_email]
+        # )
+        # email.content_subtype = "html"
+        # email.send()
         user.save()
         return user
 

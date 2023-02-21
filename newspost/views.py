@@ -58,7 +58,7 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # current_site = get_current_site(request)
+            current_site = get_current_site(request)
             mail_subject = 'Activate your News Portal account.'
             token = account_activation_token.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
