@@ -7,15 +7,17 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, get_user_model
 from django.contrib.sites.shortcuts import get_current_site
-from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_text
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from .forms import CustomUserCreationForm
-from .models import CustomUser, NewsPost, Reporter
+from .models import NewsPost, Reporter
+from .tokens import account_activation_token
+
 
 # View to display a list of all news posts
 class NewsPostListView(ListView):
@@ -56,35 +58,42 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            current_site = get_current_site(request)
+            # current_site = get_current_site(request)
             mail_subject = 'Activate your News Portal account.'
+            token = account_activation_token.make_token(user)
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             message = render_to_string('registration/account_activation_email.html', {
                 'user': user,
-                'domain': current_site.domain,
+                'domain': '127.0.0.1', #current_site.domain,
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': default_token_generator.make_token(user),
+                'activation_link': f'http://127.0.0.1:9000/activate/{uidb64}/{token}'
             })
             to_email = form.cleaned_data.get('email')
             email = EmailMessage(
                 mail_subject, message, to=[to_email]
             )
+            email.content_subtype = "html"
             email.send()
             return redirect('account_activation_sent')
     else:
         form = CustomUserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
 
-def activate_account(request, uid, token):
+def activate_account(request, uidb64, token):
     User = get_user_model()
     try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
 
-    if user is not None and user.activation_token == token:
+    if user and account_activation_token.check_token(user, token):
         user.is_active = True
-        user.activation_token = ''
         user.save()
         return HttpResponseRedirect(reverse('login'))
     else:
-        return render(request, 'activation_error.html')
+        return render(request, 'registration/activation_error.html')
+
+
+def account_activation_sent(request):
+    return render(request, 'registration/account_activation_sent.html')

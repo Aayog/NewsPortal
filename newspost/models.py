@@ -3,7 +3,6 @@ from autoslug import AutoSlugField
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
-# Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=255)  
     slug = AutoSlugField(populate_from='name')
@@ -39,7 +38,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
 
-class CustomUser(AbstractBaseUser, PermissionsMixin):
+class CustomUser(AbstractBaseUser):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     bio = models.TextField(max_length=255)
