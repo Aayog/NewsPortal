@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Our Reporters</h1>
+  <ul>
+    {% for reporter in object_list %}
+      <li>{{ reporter.user.username }}</li>
+    {% empty %}
+      <li>No reporters found.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

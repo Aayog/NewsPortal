@@ -20,19 +20,19 @@ from .models import CustomUser, NewsPost, Reporter
 # View to display a list of all news posts
 class NewsPostListView(ListView):
     model = NewsPost
-    template_name = 'news/news_list.html'
+    template_name = 'newspost/newspost_list.html'
 
 # View to display the details of a single news post
 def news_detail(request, pk):
     news_post = get_object_or_404(NewsPost, pk=pk)
-    return render(request, 'news/news_detail.html', {'news_post': news_post})
+    return render(request, 'newspost/newspost_detail.html', {'news_post': news_post})
 
 # View to create a new news post
 class NewsPostCreateView(CreateView):
     model = NewsPost
     fields = ['title', 'content', 'reporter', 'image']
-    template_name = 'news/news_form.html'
-    success_url = reverse_lazy('news_list')
+    template_name = 'newspost/news_form.html'
+    success_url = reverse_lazy('newspost_list')
 
     # Get the currently logged in user and assign them as the reporter for the news post
     def form_valid(self, form):
@@ -42,7 +42,7 @@ class NewsPostCreateView(CreateView):
 # View to display a list of all reporters
 class ReporterListView(ListView):
     model = Reporter
-    template_name = 'news/reporter_list.html'
+    template_name = 'newspost/reporter_list.html'
 
 # View to add a reporter to the current user's favorites list
 @login_required
@@ -57,7 +57,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             current_site = get_current_site(request)
-            mail_subject = 'Activate your account.'
+            mail_subject = 'Activate your News Portal account.'
             message = render_to_string('registration/account_activation_email.html', {
                 'user': user,
                 'domain': current_site.domain,

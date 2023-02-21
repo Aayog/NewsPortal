@@ -1,0 +1,80 @@
+/* Set default font family and size */
+body {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+  }
+  
+  /* Style for the header */
+  header {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+  }
+  
+  /* Style for the navigation bar */
+  nav {
+    background-color: #f2f2f2;
+    overflow: hidden;
+  }
+  
+  nav a {
+    display: block;
+    float: left;
+    color: #333;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+  }
+  
+  nav a:hover {
+    background-color: #ddd;
+  }
+  
+  /* Style for the main content area */
+  main {
+    margin: 20px;
+  }
+  
+  /* Style for the news article title */
+  .news-title {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  /* Style for the news article content */
+  .news-content {
+    margin-top: 10px;
+    font-size: 18px;
+  }
+  
+  /* Style for the form */
+  .form {
+    margin-top: 20px;
+    max-width: 500px;
+  }
+  
+  .form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .form input[type="text"],
+  .form input[type="email"],
+  .form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .form input[type="submit"] {
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  

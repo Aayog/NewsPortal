@@ -1,4 +1,4 @@
 **/news
 **/__py__cache
 db.sqlite3
-settings.py
+.env
