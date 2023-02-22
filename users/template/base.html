@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+{% load static%}
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}{% endblock %} - My News Portal</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+  <nav>
+    <ul>
+      {% comment %} <li><a href="{% url 'home' %}">Home</a></li> {% endcomment %}
+      <li><a href="{% url 'news:newspost_list' %}">News</a></li>
+      {% comment %} <li><a href="{% url 'about' %}">About</a></li> {% endcomment %}
+    </ul>
+  </nav>
+  <main>
+    {% block content %}{% endblock %}
+  </main>  
+</body>
+</html>
