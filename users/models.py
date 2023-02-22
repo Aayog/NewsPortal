@@ -42,8 +42,8 @@ class CustomUser(AbstractBaseUser):
     def get_username(self):
         return self.email
     
-    # def has_perm(self, perm, obj=None): 
-    #     return self.is_superuser
+    def has_perm(self, perm, obj=None): 
+        return self.is_superuser
 
-    # def has_module_perms(self, app_label): 
-    #     return self.is_superuser
+    def has_module_perms(self, app_label): 
+        return self.is_superuser
