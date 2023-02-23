@@ -1,7 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import Permission
-
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from django.urls import reverse
+from django.conf import settings
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, first_name=None, last_name=None, **extra_fields):
@@ -28,10 +31,13 @@ class CustomUser(AbstractBaseUser):
     is_reporter = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     zipcode = models.CharField(max_length=30, blank=True, null=True)
+    activation_token = models.CharField(max_length=50)
+
     objects = UserManager()
     date_joined = models.DateTimeField(auto_now_add=True)
     USERNAME_FIELD = 'email'    
     EMAIL_FIELD = 'email'
+
     # REQUIRED_FIELDS = ['first_name', 'last_name']
 
     class Meta:
@@ -48,6 +54,20 @@ class CustomUser(AbstractBaseUser):
 
     def has_module_perms(self, app_label): 
         return self.is_superuser
+
+    def save(self, *args, **kwargs):
+        is_new = not self.pk
+        super().save(*args, **kwargs)
+        # Only if not set first
+        if is_new:
+            token = get_random_string(length=32)
+            self.activation_token = token
+            self.save()
+            # activation_url = reverse('activate_account', args=[token])
+            activation_url = "/api/activate/"+token+"/"
+            subject = 'Activate your account'
+            message = f'Activate your account by clicking this link: {settings.BASE_URL}{activation_url}'
+            send_mail(subject, message, settings.EMAIL_HOST_USER, [self.email], fail_silently=False)
 
 class Reporter(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
@@ -83,4 +103,3 @@ class AdminPermissions(models.Model):
             ("can_write_news_post", "Can write news post"),
             ("can_read_news_post", "Can read news post"),
         )
-
