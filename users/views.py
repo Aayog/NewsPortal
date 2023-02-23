@@ -18,6 +18,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from .admin import EmailBackend
+from rest_framework import generics, permissions
+from .models import Reporter, CustomUser
+from ..newspost.models import FavoriteReporter
+from ..newspost.serializers import ReporterSerializer, CustomUserSerializer, FavoriteReporterSerializer
 
 User = get_user_model()
 
@@ -77,8 +81,8 @@ class CustomAuthToken(ObtainAuthToken):
         return Response({'token': token.key})
 
 class ObtainCustomAuthTokenView(CustomAuthToken):
-    permission_classes = ()
-    authentication_classes = ()
+    permission_classes = []
+    authentication_classes = []
     
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
@@ -111,3 +115,30 @@ class LoginView(APIView):
         else:
             return Response({'error': 'Unable to log in with provided credentials.'})
 
+class ReporterList(generics.ListCreateAPIView):
+    queryset = Reporter.objects.all()
+    serializer_class = ReporterSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class ReporterDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Reporter.objects.all()
+    serializer_class = ReporterSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class CustomUserList(generics.ListAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+
+class CustomUserDetail(generics.RetrieveAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+
+class FavoriteReporterList(generics.ListCreateAPIView):
+    queryset = FavoriteReporter.objects.all()
+    serializer_class = FavoriteReporterSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class FavoriteReporterDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FavoriteReporter.objects.all()
+    serializer_class = FavoriteReporterSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]

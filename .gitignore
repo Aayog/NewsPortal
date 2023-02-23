@@ -1,0 +1,3 @@
+**/django_news_portal/
+**/__pycache__/
+.env

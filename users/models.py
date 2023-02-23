@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import Permission
 
 
 class UserManager(BaseUserManager):
@@ -24,11 +25,11 @@ class CustomUser(AbstractBaseUser):
     profile_pic = models.ImageField(upload_to='profile_pictures', blank=True)
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)
+    is_reporter = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     zipcode = models.CharField(max_length=30, blank=True, null=True)
     objects = UserManager()
-
+    date_joined = models.DateTimeField(auto_now_add=True)
     USERNAME_FIELD = 'email'    
     EMAIL_FIELD = 'email'
     # REQUIRED_FIELDS = ['first_name', 'last_name']
@@ -47,3 +48,39 @@ class CustomUser(AbstractBaseUser):
 
     def has_module_perms(self, app_label): 
         return self.is_superuser
+
+class Reporter(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    previous_works = models.TextField(blank=True)
+    biography = models.TextField(blank=True)
+    verified = models.BooleanField(default=False) #in custom user
+
+    def __str__(self):
+        return self.user.username
+
+class FavoriteReporters(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='favorite_reporters')
+    reporters = models.ManyToManyField(Reporter)
+
+    class Meta:
+        verbose_name_plural = "Custom user favorite reporters"
+
+# Custom Permissions
+class ReporterPermissions(models.Model):
+    class Meta:
+        managed = False  # no database table creation or deletion operations will be performed for this model.
+        default_permissions = ()
+        permissions = (
+            ("can_write_news_post", "Can write news post"),
+            ("can_read_news_post", "Can read news post"),
+        )
+
+class AdminPermissions(models.Model):
+    class Meta:
+        managed = False  # no database table creation or deletion operations will be performed for this model.
+        default_permissions = ()
+        permissions = (
+            ("can_write_news_post", "Can write news post"),
+            ("can_read_news_post", "Can read news post"),
+        )
+
