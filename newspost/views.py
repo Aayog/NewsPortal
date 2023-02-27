@@ -1,9 +1,15 @@
-from rest_framework import generics
 from .models import NewsPost
 from .serializers import NewsPostSerializer
-from .permissions import IsReporterOrAdminOrReadOnly
+from .permissions import IsReporterOrAdminOrReadOnly, UserCanLikePost
+from rest_framework import viewsets
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-class NewsPostList(generics.ListCreateAPIView):
-    queryset = NewsPost.objects.all()
+class NewsPostViewSet(viewsets.ModelViewSet):
     serializer_class = NewsPostSerializer
-    permission_classes = [IsReporterOrAdminOrReadOnly]
+    queryset = NewsPost.objects.all()    
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsReporterOrAdminOrReadOnly, UserCanLikePost]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)

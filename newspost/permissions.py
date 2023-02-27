@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from .models import CustomUser
 
 class IsReporterOrAdminOrReadOnly(permissions.BasePermission):
     """
@@ -11,7 +12,7 @@ class IsReporterOrAdminOrReadOnly(permissions.BasePermission):
             return True
         
         # only allow reporters and admins to create new news posts
-        if request.user.is_authenticated and request.user.reporter:
+        if request.user.is_authenticated and request.user.is_verified and request.user.role == CustomUser.REPORTER:
             return True
 
         # deny access to users who are not reporters or admins
@@ -22,6 +23,12 @@ class IsReporterOrAdminOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return request.user.is_authenticated and (
-            request.user == obj.reporter.user or
+            request.user.role == CustomUser.REPORTER or
             request.user.is_superuser
         )
+
+class UserCanLikePost(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in ['POST', 'PUT', 'PATCH']:
+            return request.user.is_authenticated and request.user.role == 'User'
+        return True

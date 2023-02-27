@@ -1,10 +1,14 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.models import Permission
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.utils.crypto import get_random_string
 from django.urls import reverse
 from django.conf import settings
+from django.utils.http import urlsafe_base64_encode
+from .tokens import account_activation_token
+from django.utils.encoding import force_bytes
+from django.template.loader import render_to_string
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, first_name=None, last_name=None, **extra_fields):
@@ -19,24 +23,39 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('is_verified', True)
         return self.create_user(email, password, **extra_fields)
+    
+    def get_by_natural_key(self, email):
+        return self.get(email=email)
 
-class CustomUser(AbstractBaseUser):
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    USER = 1
+    REPORTER = 2
+    ADMIN = 3
+    ROLE_CHOICES = (
+        (USER, 'User'),
+        (REPORTER, 'Reporter'),
+        (ADMIN, 'ADMIN'),
+    )
     first_name = models.CharField(max_length=100, null=True)
     last_name = models.CharField(max_length=100, null=True)
     bio = models.TextField(max_length=255, null=True)
     profile_pic = models.ImageField(upload_to='profile_pictures', blank=True)
     email = models.EmailField(unique=True)
-    is_active = models.BooleanField(default=False)
-    is_reporter = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)  # Confirmed by email activation
+    role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES[:-1], blank=True, null=True, default=USER)
     is_superuser = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
     zipcode = models.CharField(max_length=30, blank=True, null=True)
     activation_token = models.CharField(max_length=50)
-
-    objects = UserManager()
+    is_verified = models.BooleanField(default=False) # use this to verify if user/reporter both active and verified
     date_joined = models.DateTimeField(auto_now_add=True)
     USERNAME_FIELD = 'email'    
     EMAIL_FIELD = 'email'
+
+    objects = UserManager()
 
     # REQUIRED_FIELDS = ['first_name', 'last_name']
 
@@ -48,12 +67,11 @@ class CustomUser(AbstractBaseUser):
     
     def get_username(self):
         return self.email
-    
-    def has_perm(self, perm, obj=None): 
-        return self.is_superuser
 
-    def has_module_perms(self, app_label): 
-        return self.is_superuser
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        email = EmailMessage(subject, message, to=[self.email])
+        email.content_subtype = "html"
+        email.send()
 
     def save(self, *args, **kwargs):
         is_new = not self.pk
@@ -63,12 +81,19 @@ class CustomUser(AbstractBaseUser):
             token = get_random_string(length=32)
             self.activation_token = token
             self.save()
-            # activation_url = reverse('activate_account', args=[token])
-            activation_url = "/api/activate/"+token+"/"
-            subject = 'Activate your account'
-            message = f'Activate your account by clicking this link: {settings.BASE_URL}{activation_url}'
-            send_mail(subject, message, settings.EMAIL_HOST_USER, [self.email], fail_silently=False)
-
+            token = account_activation_token.make_token(self)
+            uidb64 = urlsafe_base64_encode(force_bytes(self.pk))
+            subject = 'Activate Your News Portal Account'
+            activation_link = f"{reverse('users:activate', kwargs={'uidb64':str(uidb64), 'token':str(token)})}"
+            message = render_to_string('account_activation_email.html', {
+                'user': self,
+                'domain': '127.0.0.1',# current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(self.pk)),
+                # 'activation_link': f'http://127.0.0.1:9000/api/activate/{uidb64}/{token}/',
+                'activation_link': f"{settings.BASE_URL}{activation_link}",
+            })
+            self.email_user(subject, message)
+            
 class Reporter(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     previous_works = models.TextField(blank=True)
@@ -78,28 +103,12 @@ class Reporter(models.Model):
     def __str__(self):
         return self.user.username
 
-class FavoriteReporters(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='favorite_reporters')
-    reporters = models.ManyToManyField(Reporter)
+class SessionToken(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    token = models.CharField(max_length=40, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        verbose_name_plural = "Custom user favorite reporters"
-
-# Custom Permissions
-class ReporterPermissions(models.Model):
-    class Meta:
-        managed = False  # no database table creation or deletion operations will be performed for this model.
-        default_permissions = ()
-        permissions = (
-            ("can_write_news_post", "Can write news post"),
-            ("can_read_news_post", "Can read news post"),
-        )
-
-class AdminPermissions(models.Model):
-    class Meta:
-        managed = False  # no database table creation or deletion operations will be performed for this model.
-        default_permissions = ()
-        permissions = (
-            ("can_write_news_post", "Can write news post"),
-            ("can_read_news_post", "Can read news post"),
-        )
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = account_activation_token.make_token(self.user)
+        return super().save(*args, **kwargs)
