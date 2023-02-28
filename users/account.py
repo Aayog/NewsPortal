@@ -11,6 +11,7 @@ from .tokens import account_activation_token
 
 User = get_user_model()
 
+
 def activate_account(request, uidb64, token):
     print("activating account")
     try:
@@ -23,8 +24,8 @@ def activate_account(request, uidb64, token):
         user.is_active = True
         user.is_verified = True
         user.save()
-        messages.success(request, 'Your account has been activated successfully.')
-        return redirect('users:login')
+        messages.success(request, "Your account has been activated successfully.")
+        return redirect("users:login")
     else:
-        messages.error(request, 'The activation link is invalid or has expired.')
-        return redirect('/')
+        messages.error(request, "The activation link is invalid or has expired.")
+        return redirect("/")

@@ -18,10 +18,12 @@ from django.urls import path, include
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('account/', include('users.urls')),
-    path('api/', include('newspost.urls')),
-    path('jet/', include('jet.urls', 'jet')),  # Django JET URLS
-    path('auth/', include('rest_framework.urls')),
-    path('', RedirectView.as_view(url='api/')),
+    path("admin/", admin.site.urls),
+    path("account/", include("users.urls")),
+    path("api/", include("newspost.urls")),
+    path("jet/", include("jet.urls", "jet")),  # Django JET URLS
+    path("auth/", include("rest_framework.urls")),
+    path("", RedirectView.as_view(url="api/")),
+    # restful login api --
+    # api-auth/
 ]

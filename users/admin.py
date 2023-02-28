@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib import admin
 from .models import CustomUser, Reporter
 
+
 class EmailBackend(ModelBackend):
     def authenticate(self, request, email=None, password=None, **kwargs):
         UserModel = get_user_model()
@@ -23,16 +24,25 @@ class EmailBackend(ModelBackend):
 
 
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'is_active', 'is_verified', 'role')
-    list_filter = ('is_active', 'is_verified', 'role')
-    search_fields = ('email', 'first_name', 'last_name')
-    ordering = ('email',)
+    list_display = (
+        "email",
+        "first_name",
+        "last_name",
+        "is_active",
+        "is_verified",
+        "role",
+    )
+    list_filter = ("is_active", "is_verified", "role")
+    search_fields = ("email", "first_name", "last_name")
+    ordering = ("email",)
+
 
 class ReporterAdmin(admin.ModelAdmin):
-    list_display = ('user', 'verified')
-    list_filter = ('verified',)
-    search_fields = ('user__email', 'user__first_name', 'user__last_name')
-    ordering = ('user__email',)
+    list_display = ("user", "verified")
+    list_filter = ("verified",)
+    search_fields = ("user__email", "user__first_name", "user__last_name")
+    ordering = ("user__email",)
+
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Reporter, ReporterAdmin)
