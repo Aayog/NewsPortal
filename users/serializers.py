@@ -5,7 +5,8 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework.authtoken.models import Token
 from .models import CustomUser, Reporter, SessionToken
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-
+from django.core import exceptions
+import django.contrib.auth.password_validation as validators
 
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -78,7 +79,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if validated_data.get("role") == CustomUser.REPORTER:
             reporter_data = validated_data.pop("reporter")
+            password = validated_data.pop("password")
             user = CustomUser.objects.create_user(**validated_data)  # remove
+            user.set_password(password)
             Reporter.objects.create(user=user, **reporter_data)
             # remove token
             refresh = Token.for_user(user)
@@ -91,8 +94,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    # confirm password
+    password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    confirm_password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     bio = serializers.CharField(max_length=10000, required=False)
     previous_works = serializers.CharField(max_length=10000, required=False)
 
@@ -102,6 +105,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "password",
+            "confirm_password",
             "first_name",
             "last_name",
             "role",
@@ -110,31 +114,42 @@ class RegisterSerializer(serializers.ModelSerializer):
             "bio",
         )
         # exclude = ('password', 'is_verified', 'is_active', 'is_superuser')
-
+    def validate(self, data):
+        if data.get("password") != data.get("confirm_password"):
+            raise serializers.ValidationError(
+                {"password": "Passwords do not match"}
+            )
+        password = data.get("password")
+        errors = dict() 
+        try:
+            validators.validate_password(password=password)
+         # the exception raised here is different than serializers.ValidationError
+        except exceptions.ValidationError as e:
+            errors['password'] = list(e.messages)
+         
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
+    
     def create(self, validated_data):
         # password validation through django
-        password = validated_data.pop("password")
         previous_works = validated_data.get("previous_works", None)
-        print(validated_data)
-        print(previous_works)
         if previous_works is not None:
             previous_works = validated_data.pop("previous_works")
-        # don't create user here
-        user = CustomUser.objects.create_user(**validated_data)
-        user.set_password(password)
-        user.save()
+
         # Create profile
         profile_data = {
-            "user": user.id,
+            # "user": user.id,
             "is_entry_completed": True,
             "previous_works": previous_works,
         }
         profile_serializer = UserProfileSerializer(data=profile_data)
         if profile_serializer.is_valid():
             profile_serializer.save()
-        user.save()
+        # user.save()
 
-        return user
+        # return user
+        return validated_data
 
 
 # use can only update their own details. (validate if instance_user and update user same)

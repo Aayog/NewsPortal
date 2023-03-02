@@ -50,7 +50,6 @@ class NewsPost(models.Model):
     reported_threshold = models.PositiveSmallIntegerField(blank=True, default=0)
     # if reported_threshold == 0 can't add report
     is_hidden = models.BooleanField(default=False)
-    # report_count = models.PositiveSmallIntegerField(default=0)
     # done by serializer automatically (many to many, blank=True) search how to add from request.user if not reported_by
     reported_by = models.ManyToManyField(
         CustomUser, related_name="user_reported", blank=True

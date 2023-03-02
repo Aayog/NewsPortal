@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Category, Reporter, CustomUser, FavoriteReporters, NewsPost
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -89,6 +91,7 @@ class NewsPostGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsPost
         fields = [
+            "id",
             "headline",
             "short_desc",
             "image",
@@ -116,21 +119,40 @@ class NewsPostLikeSerializer(serializers.Serializer):
     def validate(self, data):
         user = self.context["request"].user
         news_post_id = self.context["view"].kwargs["pk"]
+        news_post = get_object_or_404(NewsPost, id=news_post_id)
 
-        if NewsPost.objects.filter(id=news_post_id, liked_by=user).exists():
-            raise serializers.ValidationError("You have already liked this post")
+        if news_post.liked_by.filter(id=user.id).exists():
+            # User has already liked the post, so unlike
+            news_post.liked_by.remove(user)
+            news_post.like_count -= 1
+            news_post.save()
+        else:
+            # User has not liked the post before, so increase the like count
+            news_post.liked_by.add(user)
+            news_post.like_count += 1
+            news_post.save()
         return data
 
 
 class CustomUserReporterSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    news_posts = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "full_name"]
+        fields = ["id", "email", "full_name", "news_posts"]
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
+    
+    def get_news_posts(self, obj):
+        news_posts = NewsPost.objects.filter(author=obj)[:5]
+        serializer = NewsPostGetSerializer(news_posts, many=True, context=self.context)
+        data = serializer.data
+        for i in range(len(data)):
+            data[i]["api_url"] = reverse("newspost-detail", args=[data[i]["id"]])
+        return data
+
 
 
 class FavoriteReportersSerializer(serializers.ModelSerializer):

@@ -95,20 +95,6 @@ class NewsPostLikeViewSet(viewsets.GenericViewSet):
         IsAuthenticated,
     ]
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = request.user
-        news_post_id = kwargs["pk"]
-        news_post = NewsPost.objects.get(id=news_post_id)
-        news_post.liked_by.add(user)
-        news_post.like_count += 1
-        news_post.save()
-
-        return Response({"message": "Post liked successfully"})
-
-
 class CustomUserReporterViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = CustomUserReporterSerializer
     permission_classes = [
@@ -116,13 +102,13 @@ class CustomUserReporterViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     ]
 
     def get_queryset(self):
-        queryset = CustomUser.objects.filter(role="reporter")
+        queryset = CustomUser.objects.filter(role=CustomUser.REPORTER)
         return queryset
 
     @action(detail=True, methods=["post"])
     def add_to_favorites(self, request, pk=None):
         user = request.user
-        reporter = get_object_or_404(CustomUser.objects.filter(role="reporter"), pk=pk)
+        reporter = get_object_or_404(CustomUser.objects.filter(role=CustomUser.REPORTER), pk=pk)
 
         # Check if the reporter is already in the user's favorites
         if user.favorite_reporters.filter(reporters=reporter).exists():

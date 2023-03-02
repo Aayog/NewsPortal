@@ -15,7 +15,7 @@ from .tokens import account_activation_token
 from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
 from .threads import send_email
-
+from django.contrib.auth.password_validation import validate_password
 
 class UserManager(BaseUserManager):
     def create_user(
