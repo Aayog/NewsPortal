@@ -41,7 +41,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class NewsPostSerializer(serializers.ModelSerializer):
-    # reporter = serializers.StringRelatedField()
     categories = serializers.SlugRelatedField(
         queryset=Category.objects.all(), many=True, slug_field="name"
     )
@@ -50,15 +49,35 @@ class NewsPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsPost
         # fields = '__all__'
-        exclude = ["created_at", "updated_at"]
+        exclude = ["reported_by"]
+        read_only = ["author", "created_at", "updated_at", "like_count"]
 
     def validate(self, data):
-        data.pop("author")
+        # data.pop("author")
+        # pop
+
         data["author"] = self.context["request"].user
+        # is_authenticated/loggedin check role
         if data["author"] and not data["author"].is_verified:
             raise serializers.ValidationError("Reporter is not verified")
-        # if data['report_count'] >= data['reported_threshold']:
-        #     data['is_hidden'] = True
+
+        # Check if reported_threshold is less than or equal to 0
+        reported_threshold = data.get("reported_threshold", None)
+        # make another API for reporting post newspost/report/<id>
+        if reported_threshold is not None and reported_threshold <= 0:
+            raise serializers.ValidationError("This post cannot be reported")
+        # another API for liking posts newspost/like/<id> like/unlike
+        # many to many add/
+        # if liked_by.filter(id=user.id).exists():
+        # Check if user has already reported the post
+        reported_by = data.get("reported_by", None)
+        if reported_by:
+            reported_by = CustomUser.objects.filter(
+                pk__in=[user.pk for user in reported_by]
+            )
+            user = self.context["request"].user
+            if reported_by.filter(id=user.id).exists():
+                raise serializers.ValidationError("You have already reported this post")
         return data
 
 
@@ -80,26 +99,43 @@ class NewsPostGetSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ("created_at", "updated_at")
 
-    # # validate --> validate login and add author
-    # def create(self, validated_data):
-    #     category_data = validated_data.pop('categories')
-    #     validated_data.pop('author')
-    #     validated_data['author'] = self.context['request'].user
-    #     if validated_data['author'] and not validated_data['author'].is_verified:
-    #         raise serializers.ValidationError('Reporter is not verified')
-    #     news_post = NewsPost.objects.create(**validated_data)
-    #     # news_post.author.set(validated_data['author'])
-    #     categories = [Category.objects.get_or_create(**cat_data)[0] for cat_data in category_data]
-    #     news_post.categories.set(categories)
-    #     return news_post
 
-    # def update(self, instance, validated_data):
-    #     # check if the reporter is verified before updating the post
-    #     reporter = validated_data.get('reporter')
-    #     if reporter and not reporter.verified:
-    #         raise serializers.ValidationError('Reporter is not verified')
-    #     category_names = validated_data.pop('categories', None)
-    #     if category_names is not None:
-    #         categories = Category.objects.filter(name__in=category_names)
-    #         instance.categories.set(categories)
-    #     return super().update(instance, validated_data)
+class NewsPostReportSerializer(serializers.Serializer):
+    reported_reason = serializers.CharField(max_length=255)
+
+    def validate(self, data):
+        user = self.context["request"].user
+        news_post_id = self.context["view"].kwargs["pk"]
+
+        if NewsPost.objects.filter(id=news_post_id, reported_by=user).exists():
+            raise serializers.ValidationError("You have already reported this post")
+        return data
+
+
+class NewsPostLikeSerializer(serializers.Serializer):
+    def validate(self, data):
+        user = self.context["request"].user
+        news_post_id = self.context["view"].kwargs["pk"]
+
+        if NewsPost.objects.filter(id=news_post_id, liked_by=user).exists():
+            raise serializers.ValidationError("You have already liked this post")
+        return data
+
+
+class CustomUserReporterSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = ["id", "email", "full_name"]
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
+
+
+class FavoriteReportersSerializer(serializers.ModelSerializer):
+    reporters = ReporterSerializer(many=True)
+
+    class Meta:
+        model = FavoriteReporters
+        fields = ["id", "reporters"]

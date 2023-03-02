@@ -5,7 +5,8 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.contrib.auth.models import Permission
-from django.core.mail import EmailMessage
+
+# from django.core.mail import EmailMessage
 from django.utils.crypto import get_random_string
 from django.urls import reverse
 from django.conf import settings
@@ -13,6 +14,7 @@ from django.utils.http import urlsafe_base64_encode
 from .tokens import account_activation_token
 from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
+from .threads import send_email
 
 
 class UserManager(BaseUserManager):
@@ -82,10 +84,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_username(self):
         return self.email
 
-    def email_user(self, subject, message, from_email=None, **kwargs):
-        email = EmailMessage(subject, message, to=[self.email])
-        email.content_subtype = "html"
-        email.send()
+    def email_user(self, subject, message):
+        # email = EmailMessage(subject, message, to=[self.email])
+        # email.content_subtype = "html"
+        # email.send()
+        send_email(subject, message, [self.email])
 
     def save(self, *args, **kwargs):
         is_new = not self.pk

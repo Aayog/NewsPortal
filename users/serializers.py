@@ -114,7 +114,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # password validation through django
         password = validated_data.pop("password")
-        previous_works = validated_data.pop("previous_works")
+        previous_works = validated_data.get("previous_works", None)
+        print(validated_data)
+        print(previous_works)
+        if previous_works is not None:
+            previous_works = validated_data.pop("previous_works")
         # don't create user here
         user = CustomUser.objects.create_user(**validated_data)
         user.set_password(password)

@@ -8,7 +8,6 @@ from django.utils import timezone
 def get_image_path(instance, filename):
     return os.path.join(
         "images",
-        str(instance.id),
         str(timezone.now().timestamp()) + os.path.splitext(filename)[1],
     )
 
@@ -46,8 +45,9 @@ class NewsPost(models.Model):
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # date wise in directory
     image = models.ImageField(upload_to=get_image_path, blank=True, null=True)
-    reported_threshold = models.PositiveSmallIntegerField(blank=True)
+    reported_threshold = models.PositiveSmallIntegerField(blank=True, default=0)
     # if reported_threshold == 0 can't add report
     is_hidden = models.BooleanField(default=False)
     # report_count = models.PositiveSmallIntegerField(default=0)
@@ -63,10 +63,10 @@ class NewsPost(models.Model):
     def __str__(self):
         return self.slug
 
-    def save(self, *args, **kwargs):
-        if self.report_count >= self.reported_threshold:
-            self.is_hidden = True
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if self.report_count >= self.reported_threshold:
+    #         self.is_hidden = True
+    #     super().save(*args, **kwargs)
 
 
 class FavoriteCategory(models.Model):
