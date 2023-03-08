@@ -3,10 +3,11 @@ from django.contrib.auth.models import update_last_login, Group, Permission
 from django.contrib.auth import authenticate
 from django.utils.translation import ugettext_lazy as _
 from rest_framework.authtoken.models import Token
-from .models import CustomUser, Reporter, SessionToken
+from .models import CustomUser, Reporter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.core import exceptions
 import django.contrib.auth.password_validation as validators
+
 
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -56,48 +57,49 @@ class LoginSerializer(serializers.Serializer):
                 if not user.is_active:
                     raise serializers.ValidationError("User account is disabled.")
                 update_last_login(None, user)
-                token, created = Token.objects.get_or_create(user=user)
-                return {"user": user, "token": token.key}
+                data['user'] = user
+                return data
             else:
                 raise serializers.ValidationError(
                     "Unable to log in with provided credentials."
                 )
         else:
             raise serializers.ValidationError('Must include "email" and "password".')
-
+  
+    def create(self, validated_data):
+        user = validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return token.key
 
 class UserProfileSerializer(serializers.ModelSerializer):
     reporter = ReporterSerializer(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "first_name", "last_name", "role", "reporter"]
-        read_only_fields = ["id", "role", "reporter"]
+        fields = ["id", "email", "first_name", "last_name", "role", "reporter", "password"]
+        read_only_fields = ["id", "role", "reporter", "password"]
         permission_classes = [IsAuthenticatedOrReadOnly]
-        # exclude = ('password', 'is_active')
 
     def create(self, validated_data):
-        if validated_data.get("role") == CustomUser.REPORTER:
-            reporter_data = validated_data.pop("reporter")
-            password = validated_data.pop("password")
-            user = CustomUser.objects.create_user(**validated_data)  # remove
-            user.set_password(password)
+        role = validated_data.pop("role", None)
+        reporter_data = validated_data.pop("reporter", None)
+        user = CustomUser.objects.get(user=validated_data.get('user'))
+
+        if role == CustomUser.REPORTER and reporter_data:
             Reporter.objects.create(user=user, **reporter_data)
-            # remove token
-            refresh = Token.for_user(user)
-            user.refresh_token = str(refresh)
-            user.is_verified = False
-            user.save()
-            return user
-        else:
-            return CustomUser.objects.create_user(**validated_data)
+        
+        user.is_verified = False
+        user.is_active = False
+        user.save()
+        return user
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
-    confirm_password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    password = serializers.CharField(style={"input_type": "password"}, write_only=True)
+    confirm_password = serializers.CharField(style={"input_type": "password"}, write_only=True)
     bio = serializers.CharField(max_length=10000, required=False)
     previous_works = serializers.CharField(max_length=10000, required=False)
+    reporter = ReporterSerializer(required=False)
 
     class Meta:
         model = CustomUser
@@ -112,46 +114,43 @@ class RegisterSerializer(serializers.ModelSerializer):
             "zipcode",
             "previous_works",
             "bio",
+            "reporter",
         )
-        # exclude = ('password', 'is_verified', 'is_active', 'is_superuser')
+
     def validate(self, data):
         if data.get("password") != data.get("confirm_password"):
-            raise serializers.ValidationError(
-                {"password": "Passwords do not match"}
-            )
+            raise serializers.ValidationError({"password": "Passwords do not match"})
+
         password = data.get("password")
-        errors = dict() 
+        errors = dict()
+
         try:
             validators.validate_password(password=password)
-         # the exception raised here is different than serializers.ValidationError
         except exceptions.ValidationError as e:
-            errors['password'] = list(e.messages)
-         
+            errors["password"] = list(e.messages)
+
         if errors:
             raise serializers.ValidationError(errors)
-        return data
-    
-    def create(self, validated_data):
-        # password validation through django
-        previous_works = validated_data.get("previous_works", None)
-        if previous_works is not None:
-            previous_works = validated_data.pop("previous_works")
 
-        # Create profile
-        profile_data = {
-            # "user": user.id,
-            "is_entry_completed": True,
-            "previous_works": previous_works,
-        }
+        data.pop("confirm_password")
+        return data
+
+    def create(self, validated_data):
+        previous_works = validated_data.pop("previous_works", None)
+        bio = validated_data.pop("bio", None)
+        reporter_data = validated_data.pop("reporter", None)
+        
+        user = CustomUser.objects.create_user(**validated_data)
+        user.set_password(validated_data.get("password"))
+
+        if reporter_data:
+            validated_data["role"] = CustomUser.REPORTER
+        else:
+            validated_data["role"] = CustomUser.USER
+        
+        profile_data = {'user': user.id, 'is_entry_completed': True, 'previous_works': previous_works, 'bio': bio}
         profile_serializer = UserProfileSerializer(data=profile_data)
         if profile_serializer.is_valid():
             profile_serializer.save()
-        # user.save()
-
-        # return user
-        return validated_data
-
-
-# use can only update their own details. (validate if instance_user and update user same)
-# Profile displaying/reporter and their permission listed  out (get user permissions)
-#
+        user.save()
+        return user

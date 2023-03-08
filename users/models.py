@@ -17,6 +17,7 @@ from django.template.loader import render_to_string
 from .threads import send_email
 from django.contrib.auth.password_validation import validate_password
 
+
 class UserManager(BaseUserManager):
     def create_user(
         self, email, password=None, first_name=None, last_name=None, **extra_fields
@@ -85,9 +86,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
     def email_user(self, subject, message):
-        # email = EmailMessage(subject, message, to=[self.email])
-        # email.content_subtype = "html"
-        # email.send()
+        print("sending email .. .")
         send_email(subject, message, [self.email])
 
     def save(self, *args, **kwargs):
@@ -95,8 +94,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
         # Only if not set first
         if is_new:
-            token = get_random_string(length=32)
-            self.activation_token = token
             self.save()
             token = account_activation_token.make_token(self)
             uidb64 = urlsafe_base64_encode(force_bytes(self.pk))
@@ -108,13 +105,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
                     "user": self,
                     "domain": "127.0.0.1",  # current_site.domain,
                     "uid": urlsafe_base64_encode(force_bytes(self.pk)),
-                    # 'activation_link': f'http://127.0.0.1:9000/api/activate/{uidb64}/{token}/',
                     "activation_link": f"{settings.BASE_URL}{activation_link}",
                 },
             )
+            print(message)
             self.email_user(subject, message)
-            # send mails in threads -- if running in the background -- thread/multi processing
-
 
 class Reporter(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
@@ -124,15 +119,4 @@ class Reporter(models.Model):
 
     def __str__(self):
         return self.user.username
-
-
-# use django's own
-class SessionToken(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    token = models.CharField(max_length=40, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.token:
-            self.token = account_activation_token.make_token(self.user)
-        return super().save(*args, **kwargs)
+    

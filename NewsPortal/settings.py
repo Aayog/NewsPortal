@@ -40,10 +40,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
     "users",
     "newspost",
+    "rest_framework",
+    "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [
@@ -77,12 +77,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "NewsPortal.wsgi.application"
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
-    ),
-}
+# REST_FRAMEWORK = {
+#     "DEFAULT_AUTHENTICATION_CLASSES": (
+#         # "rest_framework.authentication.SessionAuthentication",
+#         "rest_framework.authentication.TokenAuthentication",
+#     ),
+# }
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
@@ -131,7 +131,7 @@ REST_FRAMEWORK = {
 APPEND_SLASH = False
 AUTHENTICATION_BACKENDS = [
     "users.admin.EmailBackend",
-    "django.contrib.auth.backends.ModelBackend",
+    # "django.contrib.auth.backends.ModelBackend",
 ]
 
 # Internationalization
@@ -159,7 +159,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 NOTIFICATION_EMAIL = "aayog.koirala@youthinnovationlab.org"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = 587
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_USE_TLS = True
+
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False

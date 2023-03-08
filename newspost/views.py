@@ -95,6 +95,7 @@ class NewsPostLikeViewSet(viewsets.GenericViewSet):
         IsAuthenticated,
     ]
 
+
 class CustomUserReporterViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = CustomUserReporterSerializer
     permission_classes = [
@@ -108,7 +109,9 @@ class CustomUserReporterViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     @action(detail=True, methods=["post"])
     def add_to_favorites(self, request, pk=None):
         user = request.user
-        reporter = get_object_or_404(CustomUser.objects.filter(role=CustomUser.REPORTER), pk=pk)
+        reporter = get_object_or_404(
+            CustomUser.objects.filter(role=CustomUser.REPORTER), pk=pk
+        )
 
         # Check if the reporter is already in the user's favorites
         if user.favorite_reporters.filter(reporters=reporter).exists():
@@ -128,3 +131,13 @@ class FavoriteReportersViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+from rest_framework import generics
+
+class FavoriteReporterCreateAPIView(generics.CreateAPIView):
+    serializer_class = FavoriteReporterSerializer
+
+    def perform_create(self, serializer):
+        reporter_ids = self.request.data.get("reporters", [])
+        reporters = CustomUser.objects.filter(role=CustomUser.REPORTER, id__in=reporter_ids)
+        serializer.save(user=self.request.user, reporters=reporters)
