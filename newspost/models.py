@@ -35,37 +35,23 @@ class Category(models.Model):
 class NewsPost(models.Model):
     headline = models.CharField(max_length=150)
     slug = AutoSlugField(populate_from="headline")
-    # date_added = models.DateTimeField(auto_now=True)
     short_desc = models.TextField()
     news_text = models.TextField()
-    # only one category
-    categories = models.ManyToManyField(
-        Category, related_name="news_posts"
-    )  # should be one to many for both ^ foreignkey
+    categories = models.ManyToManyField(Category, related_name="news_posts")
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # date wise in directory
     image = models.ImageField(upload_to=get_image_path, blank=True, null=True)
     reported_threshold = models.PositiveSmallIntegerField(blank=True, default=0)
-    # if reported_threshold == 0 can't add report
     is_hidden = models.BooleanField(default=False)
-    # done by serializer automatically (many to many, blank=True) search how to add from request.user if not reported_by
     reported_by = models.ManyToManyField(
         CustomUser, related_name="user_reported", blank=True
     )
-    # many to many with user, similar ^
     liked_by = models.ManyToManyField(CustomUser, related_name="user_liked", blank=True)
     like_count = models.PositiveIntegerField(default=0)
 
-    # view_count = models.PositiveIntegerField(default=0)
     def __str__(self):
         return self.slug
-
-    # def save(self, *args, **kwargs):
-    #     if self.report_count >= self.reported_threshold:
-    #         self.is_hidden = True
-    #     super().save(*args, **kwargs)
 
 
 class FavoriteCategory(models.Model):

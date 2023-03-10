@@ -5,8 +5,6 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.contrib.auth.models import Permission
-
-# from django.core.mail import EmailMessage
 from django.utils.crypto import get_random_string
 from django.urls import reverse
 from django.conf import settings
@@ -65,16 +63,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     zipcode = models.CharField(max_length=30, blank=True, null=True)
     activation_token = models.CharField(max_length=50)
-    is_verified = models.BooleanField(
-        default=False
-    )  # use this to verify if user/reporter both active and verified
+    is_verified = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
 
     objects = UserManager()
-
-    # REQUIRED_FIELDS = ['first_name', 'last_name']
 
     class Meta:
         db_table = "users"
@@ -111,12 +105,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             print(message)
             self.email_user(subject, message)
 
+
 class Reporter(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     previous_works = models.TextField(blank=True)
     biography = models.TextField(blank=True)
-    verified = models.BooleanField(default=False)  # in custom user
+    verified = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
-    

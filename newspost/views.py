@@ -16,12 +16,16 @@ from .serializers import (
     NewsPostReportSerializer,
     NewsPostSerializer,
 )
-from users.models import CustomUser
+
+from django.contrib.auth import get_user_model
+
+CustomUser = get_user_model()
+
+from rest_framework import generics
 
 
 class NewsPostViewSet(viewsets.ModelViewSet):
     serializer_class = NewsPostSerializer
-    authentication_classes = [SessionAuthentication]
     permission_classes = [
         IsAuthenticatedOrReadOnly,
         IsReporterOrAdminOrReadOnly,
@@ -29,7 +33,9 @@ class NewsPostViewSet(viewsets.ModelViewSet):
     queryset = NewsPost.objects.all()
 
     def get_queryset(self):
-        if self.request.user.is_anonymous or not self.request.user.is_authenticated:
+        if self.request is not None and (
+            self.request.user.is_anonymous or not self.request.user.is_authenticated
+        ):
             queryset = NewsPost.objects.filter(is_hidden=False)
         elif self.request.user.is_superuser:
             queryset = NewsPost.objects.all()
@@ -43,7 +49,11 @@ class NewsPostViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if (
-            self.request.user.is_anonymous or self.request.user.role == CustomUser.USER
+            self.request is not None
+            and (
+                self.request.user.is_anonymous
+                or self.request.user.role == CustomUser.USER
+            )
         ) and self.request.method == "GET":
             return NewsPostGetSerializer
         return NewsPostSerializer
@@ -52,22 +62,6 @@ class NewsPostViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-# reporter validate override create
-
-# groups add change/delete permissions in
-# create groups - checking permission by adding
-# user --> view, report/like {override for this, special cases}
-# reporter --> add/edit/del/view post, report/like
-# Django object model permission
-# admin --> everything
-
-
-# separate api to like isAuthenticate or can report
-
-
-# personal dashboard for reporter -- personal posts/analytics/reported
-# portal dashboard -- same as User
-# action decorater
 class NewsPostReportViewSet(viewsets.GenericViewSet):
     serializer_class = NewsPostReportSerializer
     permission_classes = [
@@ -132,12 +126,13 @@ class FavoriteReportersViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-from rest_framework import generics
 
 class FavoriteReporterCreateAPIView(generics.CreateAPIView):
     serializer_class = FavoriteReporterSerializer
 
     def perform_create(self, serializer):
         reporter_ids = self.request.data.get("reporters", [])
-        reporters = CustomUser.objects.filter(role=CustomUser.REPORTER, id__in=reporter_ids)
+        reporters = CustomUser.objects.filter(
+            role=CustomUser.REPORTER, id__in=reporter_ids
+        )
         serializer.save(user=self.request.user, reporters=reporters)

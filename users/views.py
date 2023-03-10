@@ -5,12 +5,15 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
 from django.contrib import messages
-from django.contrib.auth import get_user_model
 from .models import CustomUser
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+
+CustomUser = get_user_model()
+
 
 class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
@@ -45,17 +48,12 @@ class LoginView(generics.GenericAPIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            # user = serializer.validated_data["user"]
-            token = serializer.save() #Token.objects.get_or_create(user=user)
-            # session_token = Token.objects.create(user=user)
-            # return Response()
+            token = serializer.save()
             url = reverse("newspost-list")
-            response_data = {'token': token}
-            return redirect(url, response_data)
+            response_data = {"token": token}
+            return Response(response_data)
+
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
-
-User = get_user_model()
 
 
 class ActivateAccountView(View):
@@ -78,7 +76,9 @@ class ActivateAccountView(View):
 
 class APIAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={"request": request})
+        serializer = self.serializer_class(
+            data=request.data, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         token, created = Token.objects.get_or_create(user=user)

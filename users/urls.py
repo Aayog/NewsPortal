@@ -11,5 +11,5 @@ urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("profile/", UserProfileView.as_view(), name="profile"),
     path("activate/<str:uidb64>/<str:token>/", activate_account, name="activate"),
-    path('api-token-auth/', APIAuthToken.as_view(), name='api_token_auth')
+    path("api-token-auth/", APIAuthToken.as_view(), name="api_token_auth"),
 ]

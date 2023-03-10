@@ -65,10 +65,10 @@ class NewsPostSerializer(serializers.ModelSerializer):
         # is_authenticated/loggedin check role
         if data["author"] and not data["author"].is_authenticated:
             raise serializers.ValidationError("Reporter is not logged in")
-        
+
         if data["author"] and not data["author"].is_verified:
             raise serializers.ValidationError("Reporter is not verified")
-        
+
         reported_threshold = data.get("reported_threshold", None)
         if reported_threshold is not None and reported_threshold <= 0:
             raise serializers.ValidationError("This post cannot be reported")

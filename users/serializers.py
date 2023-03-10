@@ -57,7 +57,7 @@ class LoginSerializer(serializers.Serializer):
                 if not user.is_active:
                     raise serializers.ValidationError("User account is disabled.")
                 update_last_login(None, user)
-                data['user'] = user
+                data["user"] = user
                 return data
             else:
                 raise serializers.ValidationError(
@@ -65,29 +65,38 @@ class LoginSerializer(serializers.Serializer):
                 )
         else:
             raise serializers.ValidationError('Must include "email" and "password".')
-  
+
     def create(self, validated_data):
-        user = validated_data['user']
+        user = validated_data["user"]
         token, created = Token.objects.get_or_create(user=user)
         return token.key
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     reporter = ReporterSerializer(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "first_name", "last_name", "role", "reporter", "password"]
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "reporter",
+            "password",
+        ]
         read_only_fields = ["id", "role", "reporter", "password"]
         permission_classes = [IsAuthenticatedOrReadOnly]
 
     def create(self, validated_data):
         role = validated_data.pop("role", None)
         reporter_data = validated_data.pop("reporter", None)
-        user = CustomUser.objects.get(user=validated_data.get('user'))
+        user = CustomUser.objects.get(user=validated_data.get("user"))
 
         if role == CustomUser.REPORTER and reporter_data:
             Reporter.objects.create(user=user, **reporter_data)
-        
+
         user.is_verified = False
         user.is_active = False
         user.save()
@@ -96,7 +105,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(style={"input_type": "password"}, write_only=True)
-    confirm_password = serializers.CharField(style={"input_type": "password"}, write_only=True)
+    confirm_password = serializers.CharField(
+        style={"input_type": "password"}, write_only=True
+    )
     bio = serializers.CharField(max_length=10000, required=False)
     previous_works = serializers.CharField(max_length=10000, required=False)
     reporter = ReporterSerializer(required=False)
@@ -139,7 +150,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         previous_works = validated_data.pop("previous_works", None)
         bio = validated_data.pop("bio", None)
         reporter_data = validated_data.pop("reporter", None)
-        
+
         user = CustomUser.objects.create_user(**validated_data)
         user.set_password(validated_data.get("password"))
 
@@ -147,8 +158,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             validated_data["role"] = CustomUser.REPORTER
         else:
             validated_data["role"] = CustomUser.USER
-        
-        profile_data = {'user': user.id, 'is_entry_completed': True, 'previous_works': previous_works, 'bio': bio}
+
+        profile_data = {
+            "user": user.id,
+            "is_entry_completed": True,
+            "previous_works": previous_works,
+            "bio": bio,
+        }
         profile_serializer = UserProfileSerializer(data=profile_data)
         if profile_serializer.is_valid():
             profile_serializer.save()
