@@ -1,4 +1,5 @@
-from rest_framework import generics, permissions, status
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import LoginSerializer, UserProfileSerializer, RegisterSerializer
 from django.shortcuts import redirect
@@ -7,20 +8,17 @@ from django.views import View
 from django.contrib import messages
 from .models import CustomUser
 from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 
 CustomUser = get_user_model()
 
 
-class RegisterView(generics.CreateAPIView):
-    permission_classes = [permissions.AllowAny]
-    serializer_class = RegisterSerializer
+class UserViewSet(viewsets.GenericViewSet):
+    queryset = CustomUser.objects.all()
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+    @action(detail=False, methods=["POST"], permission_classes=[permissions.AllowAny])
+    def register(self, request):
+        serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             if user:
@@ -32,21 +30,21 @@ class RegisterView(generics.CreateAPIView):
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=["GET", "PUT"], permission_classes=[permissions.IsAuthenticated])
+    def profile(self, request):
+        if request.method == "GET":
+            serializer = UserProfileSerializer(request.user)
+            return Response(serializer.data)
+        elif request.method == "PUT":
+            serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserProfileView(generics.RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserProfileSerializer
-
-    def get_object(self):
-        return self.request.user
-
-
-class LoginView(generics.GenericAPIView):
-    permission_classes = [permissions.AllowAny]
-    serializer_class = LoginSerializer
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+    @action(detail=False, methods=["POST"], permission_classes=[permissions.AllowAny])
+    def login(self, request):
+        serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             token = serializer.save()
             url = reverse("newspost-list")
@@ -72,14 +70,3 @@ class ActivateAccountView(View):
         except CustomUser.DoesNotExist:
             messages.error(request, "Invalid activation link.")
             return redirect("users:register")
-
-
-class APIAuthToken(ObtainAuthToken):
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(
-            data=request.data, context={"request": request}
-        )
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data["user"]
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "user_id": user.id})

@@ -1,15 +1,14 @@
 from django.urls import path
-from .views import RegisterView, LoginView, UserProfileView, APIAuthToken
-from .account import activate_account
-from rest_framework.authtoken import views
-
+from rest_framework.routers import DefaultRouter
+from .views import UserViewSet, ActivateAccountView
 
 app_name = "users"
 
+router = DefaultRouter()
+router.register(r"users", UserViewSet, basename="user")
+
 urlpatterns = [
-    path("register/", RegisterView.as_view(), name="register"),
-    path("login/", LoginView.as_view(), name="login"),
-    path("profile/", UserProfileView.as_view(), name="profile"),
-    path("activate/<str:uidb64>/<str:token>/", activate_account, name="activate"),
-    path("api-token-auth/", APIAuthToken.as_view(), name="api_token_auth"),
+    path("activate/<str:token>/", ActivateAccountView.as_view(), name="activate"),
 ]
+
+urlpatterns += router.urls
