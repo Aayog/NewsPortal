@@ -1,10 +1,13 @@
 import os
-import environ
+import dotenv
+dotenv.load_dotenv()
+
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = True
 
@@ -116,9 +119,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 EMAIL_HOST = "smtp.gmail.com"
-EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = 587
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_USE_TLS = True

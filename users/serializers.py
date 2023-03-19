@@ -108,8 +108,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(
         style={"input_type": "password"}, write_only=True
     )
-    bio = serializers.CharField(max_length=10000, required=False)
-    previous_works = serializers.CharField(max_length=10000, required=False)
+    # bio = serializers.CharField(max_length=10000, required=False)
+    # previous_works = serializers.CharField(max_length=10000, required=False)
     reporter = ReporterSerializer(required=False)
 
     class Meta:
@@ -123,8 +123,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             "last_name",
             "role",
             "zipcode",
-            "previous_works",
-            "bio",
+            # "previous_works",
+            # "bio",
             "reporter",
         )
 

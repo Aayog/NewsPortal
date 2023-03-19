@@ -15,6 +15,15 @@ CustomUser = get_user_model()
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = CustomUser.objects.all()
+    def get_serializer_class(self):
+        if self.action == "register":
+            return RegisterSerializer
+        elif self.action == "profile":
+            return UserProfileSerializer
+        elif self.action == "login":
+            return LoginSerializer
+        else:
+            return super().get_serializer_class()
 
     @action(detail=False, methods=["POST"], permission_classes=[permissions.AllowAny])
     def register(self, request):
