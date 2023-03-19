@@ -10,7 +10,10 @@ class EmailThread(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        self.email.send(fail_silently=False)
+        email = EmailMessage(self.subject, self.message, to=self.recipient_list)
+        email.content_subtype = "html"
+        print(email)
+        email.send(fail_silently=False)
 
 
 def send_email(email):

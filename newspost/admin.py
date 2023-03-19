@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, NewsPost, FavoriteCategory, FavoriteReporters
+from .models import Category, NewsPost
 
 
 class CategoryAdmin(admin.ModelAdmin):

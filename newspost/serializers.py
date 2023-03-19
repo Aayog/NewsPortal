@@ -7,7 +7,7 @@ from django.urls import reverse
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "email"]
+        fields = ["id", "email"]
 
 
 class ReporterSerializer(serializers.ModelSerializer):
@@ -24,11 +24,14 @@ class ReporterSerializer(serializers.ModelSerializer):
 
 
 class FavoriteReporterSerializer(serializers.ModelSerializer):
-    reporter = ReporterSerializer()
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    reporters = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.filter(role=CustomUser.REPORTER), many=True
+    )
 
     class Meta:
         model = FavoriteReporters
-        fields = ["id", "user", "reporter"]
+        fields = ["id", "user", "reporters"]
 
 
 # category only changed by superuser
@@ -60,18 +63,15 @@ class NewsPostSerializer(serializers.ModelSerializer):
 
         data["author"] = self.context["request"].user
         # is_authenticated/loggedin check role
+        if data["author"] and not data["author"].is_authenticated:
+            raise serializers.ValidationError("Reporter is not logged in")
+
         if data["author"] and not data["author"].is_verified:
             raise serializers.ValidationError("Reporter is not verified")
 
-        # Check if reported_threshold is less than or equal to 0
         reported_threshold = data.get("reported_threshold", None)
-        # make another API for reporting post newspost/report/<id>
         if reported_threshold is not None and reported_threshold <= 0:
             raise serializers.ValidationError("This post cannot be reported")
-        # another API for liking posts newspost/like/<id> like/unlike
-        # many to many add/
-        # if liked_by.filter(id=user.id).exists():
-        # Check if user has already reported the post
         reported_by = data.get("reported_by", None)
         if reported_by:
             reported_by = CustomUser.objects.filter(
@@ -144,7 +144,7 @@ class CustomUserReporterSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
-    
+
     def get_news_posts(self, obj):
         news_posts = NewsPost.objects.filter(author=obj)[:5]
         serializer = NewsPostGetSerializer(news_posts, many=True, context=self.context)
@@ -152,7 +152,6 @@ class CustomUserReporterSerializer(serializers.ModelSerializer):
         for i in range(len(data)):
             data[i]["api_url"] = reverse("newspost-detail", args=[data[i]["id"]])
         return data
-
 
 
 class FavoriteReportersSerializer(serializers.ModelSerializer):
