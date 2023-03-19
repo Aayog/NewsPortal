@@ -16,6 +16,7 @@ from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
 from .threads import send_email
 from django.contrib.auth.password_validation import validate_password
+from django.core.mail import EmailMessage
 
 class UserManager(BaseUserManager):
     def create_user(
@@ -85,10 +86,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
     def email_user(self, subject, message):
-        # email = EmailMessage(subject, message, to=[self.email])
-        # email.content_subtype = "html"
+        email = EmailMessage(subject, message, to=[self.email])
+        email.content_subtype = "html"
         # email.send()
-        send_email(subject, message, [self.email])
+        # send_email(subject, message, [self.email])
+        send_email(email)
 
     def save(self, *args, **kwargs):
         is_new = not self.pk

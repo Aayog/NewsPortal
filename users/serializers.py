@@ -79,9 +79,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if validated_data.get("role") == CustomUser.REPORTER:
             reporter_data = validated_data.pop("reporter")
-            password = validated_data.pop("password")
-            user = CustomUser.objects.create_user(**validated_data)  # remove
-            user.set_password(password)
+            # password = validated_data.pop("password")
+            # user = CustomUser.objects.create_user(**validated_data)  # remove
+            # user.set_password(password)
+            user = validated_data.pop("user")
             Reporter.objects.create(user=user, **reporter_data)
             # remove token
             refresh = Token.for_user(user)
@@ -136,10 +137,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         previous_works = validated_data.get("previous_works", None)
         if previous_works is not None:
             previous_works = validated_data.pop("previous_works")
+        validated_data.pop("confirm_password")
+        user = CustomUser(**validated_data)
+        password = validated_data.get("password")
+
+        user.set_password(password)
+        user.save()
 
         # Create profile
         profile_data = {
-            # "user": user.id,
+            "user": user.id,
             "is_entry_completed": True,
             "previous_works": previous_works,
         }
@@ -149,7 +156,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         # user.save()
 
         # return user
-        return validated_data
+        return user
 
 
 # use can only update their own details. (validate if instance_user and update user same)

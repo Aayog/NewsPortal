@@ -15,14 +15,15 @@ import environ
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-env = environ.Env()
-environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+env = environ.Env()
+environ.Env.read_env(env_file=os.path.join(CURRENT_DIR, ".env"))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = env("SECRET_KEY") #'a!p2pq^)rf#*6!7fdw@+i)m0%x_a$&e4td9ic$vd#b&-1(2$+z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -147,7 +148,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-BASE_URL = "http://localhost:9000"
+BASE_URL = "http://localhost:8000"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
@@ -156,7 +157,6 @@ STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-NOTIFICATION_EMAIL = "aayog.koirala@youthinnovationlab.org"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
