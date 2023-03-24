@@ -8,7 +8,6 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.core import exceptions
 import django.contrib.auth.password_validation as validators
 
-
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
@@ -22,7 +21,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
-
 
 class ReporterSerializer(serializers.ModelSerializer):
     class Meta:
