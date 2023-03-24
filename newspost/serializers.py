@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Category, Reporter, CustomUser, FavoriteReporters, NewsPost, FavoriteCategory
+from .models import (
+    Category,
+    Reporter,
+    CustomUser,
+    FavoriteReporters,
+    NewsPost,
+    FavoriteCategory,
+)
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 
@@ -160,6 +167,7 @@ class FavoriteReportersSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteReporters
         fields = ["id", "reporters"]
+
 
 class FavoriteCategorySerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())

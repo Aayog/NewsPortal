@@ -2,7 +2,14 @@ from rest_framework import viewsets, mixins, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .permissions import IsReporterOrAdminOrReadOnly
-from .models import Category, Reporter, CustomUser, FavoriteReporters, NewsPost, FavoriteCategory
+from .models import (
+    Category,
+    Reporter,
+    CustomUser,
+    FavoriteReporters,
+    NewsPost,
+    FavoriteCategory,
+)
 from .serializers import (
     CustomUserSerializer,
     ReporterSerializer,
@@ -17,14 +24,17 @@ from .serializers import (
     FavoriteCategorySerializer,  # Add this import
 )
 
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAdminUser]
 
+
 class ReporterViewSet(viewsets.ModelViewSet):
     queryset = Reporter.objects.all()
     serializer_class = ReporterSerializer
+
 
 class FavoriteReporterViewSet(viewsets.ModelViewSet):
     queryset = FavoriteReporters.objects.all()
@@ -34,6 +44,7 @@ class FavoriteReporterViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         return self.queryset.filter(user=user)
+
 
 class NewsPostViewSet(viewsets.ModelViewSet):
     queryset = NewsPost.objects.all()
@@ -72,6 +83,7 @@ class NewsPostViewSet(viewsets.ModelViewSet):
         news_post.save()
 
         return Response({"message": "Post liked/unliked"}, status=status.HTTP_200_OK)
+
 
 class FavoriteCategoryViewSet(viewsets.ModelViewSet):
     queryset = FavoriteCategory.objects.all()

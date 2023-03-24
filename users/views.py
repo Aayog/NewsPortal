@@ -15,6 +15,7 @@ CustomUser = get_user_model()
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = CustomUser.objects.all()
+
     def get_serializer_class(self):
         if self.action == "register":
             return RegisterSerializer
@@ -39,13 +40,19 @@ class UserViewSet(viewsets.GenericViewSet):
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["GET", "PUT"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False,
+        methods=["GET", "PUT"],
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def profile(self, request):
         if request.method == "GET":
             serializer = UserProfileSerializer(request.user)
             return Response(serializer.data)
         elif request.method == "PUT":
-            serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+            serializer = UserProfileSerializer(
+                request.user, data=request.data, partial=True
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)

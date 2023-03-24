@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.core import exceptions
 import django.contrib.auth.password_validation as validators
 
+
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
@@ -21,6 +22,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
 
 class ReporterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -106,8 +108,6 @@ class RegisterSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(
         style={"input_type": "password"}, write_only=True
     )
-    # bio = serializers.CharField(max_length=10000, required=False)
-    # previous_works = serializers.CharField(max_length=10000, required=False)
     reporter = ReporterSerializer(required=False)
 
     class Meta:
@@ -121,8 +121,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             "last_name",
             "role",
             "zipcode",
-            # "previous_works",
-            # "bio",
             "reporter",
         )
 
@@ -145,26 +143,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        previous_works = validated_data.pop("previous_works", None)
-        bio = validated_data.pop("bio", None)
         reporter_data = validated_data.pop("reporter", None)
 
         user = CustomUser.objects.create_user(**validated_data)
         user.set_password(validated_data.get("password"))
 
-        if reporter_data:
-            validated_data["role"] = CustomUser.REPORTER
+        if reporter_data and validated_data.get("role") == CustomUser.REPORTER:
+            Reporter.objects.create(user=user, **reporter_data)
+            user.role = CustomUser.REPORTER
         else:
-            validated_data["role"] = CustomUser.USER
+            user.role = CustomUser.USER
 
-        profile_data = {
-            "user": user.id,
-            "is_entry_completed": True,
-            "previous_works": previous_works,
-            "bio": bio,
-        }
-        profile_serializer = UserProfileSerializer(data=profile_data)
-        if profile_serializer.is_valid():
-            profile_serializer.save()
         user.save()
         return user
